@@ -3,10 +3,12 @@ import { ArrowRight, PlayCircle } from 'lucide-react';
 import { HoloObject } from './HoloObject';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { useAuthUser } from '../lib/auth';
 
 const Hero: React.FC = () => {
   const heroRef = useRef<HTMLDivElement>(null);
   const [displayedText, setDisplayedText] = useState("");
+  const { name } = useAuthUser();
 
   const { scrollY } = useScroll();
   const translateY1 = useTransform(scrollY, [0, 1000], [0, -50]);
@@ -59,10 +61,17 @@ const Hero: React.FC = () => {
             </span>
           </motion.div>
 
-          <motion.h1 variants={itemVariants} className="text-6xl md:text-8xl font-heading font-bold leading-[1.05] tracking-tight mb-6 text-text-prim drop-shadow-sm">
-            Architect Your <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-phoenix to-dawn italic pr-4">Trajectory</span>
-          </motion.h1>
+          <div className="text-6xl md:text-8xl font-heading font-bold leading-[1.05] tracking-tight mb-6 text-text-prim drop-shadow-sm">
+            {name && (
+              <motion.h1 variants={itemVariants}>
+                Hey {name},  
+              </motion.h1>
+            )}
+            <motion.h1 variants={itemVariants}>
+              Architect Your <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-phoenix to-dawn italic pr-4">Career Trajectory</span>
+            </motion.h1>
+          </div>
 
           <motion.p variants={itemVariants} className="text-xl md:text-2xl text-text-sec max-w-2xl font-body font-light leading-relaxed mb-10 min-h-[80px]">
             {displayedText}

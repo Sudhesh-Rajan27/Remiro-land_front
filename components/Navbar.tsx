@@ -1,19 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 30);
+      setIsMobileMenuOpen(false);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem('remiro_token');
+    setIsAuthenticated(!!token);
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'remiro_token') {
+        setIsAuthenticated(!!event.newValue);
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const handleNavClick = (href: string) => {
+    if (!isAuthenticated) {
+      navigate('/register');
+      return;
+    }
+    navigate(href);
+  };
+
+  const handleStartSession = () => {
+    if (!isAuthenticated) {
+      navigate('/register');
+      return;
+    }
+    navigate('/launch');
+  };
+
+  const handleLoginSignup = () => {
+    navigate('/register');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('remiro_token');
+    localStorage.removeItem('remiro_user');
+    setIsAuthenticated(false);
+    navigate('/register', { replace: true });
+  };
 
   const navLinks = [
     { name: 'Product', href: '/product' },
@@ -45,9 +89,9 @@ const Navbar: React.FC = () => {
           `}
         >
           {/* Logo */}
-          <Link to="/home" className="flex items-center space-x-3 z-10 group cursor-pointer">
+          <Link to="/" className="flex items-center space-x-3 z-10 group cursor-pointer">
             <img
-              src="/remiroo.png"
+              src="/logo.png"
               alt="Remiro"
               className="h-10 w-auto rounded-xl shadow-sm object-contain "
             />
@@ -57,21 +101,25 @@ const Navbar: React.FC = () => {
           <div className="hidden lg:flex items-center absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
             <div className={`flex items-center p-1 rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] ${isScrolled ? 'bg-transparent' : 'bg-black/5 border border-black/10 shadow-sm backdrop-blur-md'}`}>
               {navLinks.slice(0, 6).map((link) => (
-                <Link 
-                  key={link.name} 
-                  to={link.href}
-                  className={`text-sm font-body font-medium px-4 py-2 rounded-full transition-all duration-300 hover:bg-black/5 ${location.pathname === link.href ? 'text-text-prim bg-black/5 shadow-sm' : 'text-text-sec hover:text-text-prim'}`}
+                <button
+                  key={link.name}
+                  type="button"
+                  onClick={() => handleNavClick(link.href)}
+                  className={`text-sm font-body font-medium px-4 py-2 rounded-full transition-all duration-300 hover:bg-black/5 ${
+                    location.pathname === link.href ? 'text-text-prim bg-black/5 shadow-sm' : 'text-text-sec hover:text-text-prim'
+                  }`}
                 >
                   {link.name}
-                </Link>
+                </button>
               ))}
             </div>
           </div>
 
-          {/* CTA Button */}
+          {/* CTA: Start Session + Login/Logout icon (rightmost) */}
           <div className="hidden md:flex items-center space-x-4 z-10">
-            <Link 
-              to="/launch"
+            <button
+              type="button"
+              onClick={handleStartSession}
               className={`
                 group relative px-6 py-2.5 rounded-full font-body text-xs font-bold tracking-widest uppercase overflow-hidden transition-all duration-300
                 ${isScrolled 
@@ -81,7 +129,20 @@ const Navbar: React.FC = () => {
               `}
             >
               <span className="relative z-10">Start Session</span>
-            </Link>
+            </button>
+            <button
+              type="button"
+              onClick={isAuthenticated ? handleLogout : handleLoginSignup}
+              className="flex items-center justify-center p-1 rounded-full transition-opacity hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-phoenix/50"
+              aria-label={isAuthenticated ? 'Logout' : 'Login'}
+              title={isAuthenticated ? 'Logout' : 'Login'}
+            >
+              <img
+                src={isAuthenticated ? '/logout.png' : '/login.png'}
+                alt={isAuthenticated ? 'Logout' : 'Login'}
+                className={`${isAuthenticated ? 'h-8' : 'h-9'} w-auto object-contain`}
+              />
+            </button>
           </div>
 
           {/* Mobile Toggle */}
@@ -99,23 +160,54 @@ const Navbar: React.FC = () => {
         {isMobileMenuOpen && (
           <div className="absolute top-full left-0 right-0 mt-4 mx-2 glass-panel rounded-3xl p-6 flex flex-col space-y-4 animate-in fade-in slide-in-from-top-4 duration-300 shadow-xl">
             {navLinks.map((link) => (
-              <Link 
-                key={link.name} 
-                to={link.href}
-                className={`font-heading text-2xl px-2 transition-colors ${location.pathname === link.href ? 'text-phoenix font-bold' : 'text-text-sec hover:text-text-prim'}`}
-                onClick={() => setIsMobileMenuOpen(false)}
+              <button
+                key={link.name}
+                type="button"
+                onClick={() => {
+                  handleNavClick(link.href);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`text-left font-heading text-2xl px-2 transition-colors ${
+                  location.pathname === link.href ? 'text-phoenix font-bold' : 'text-text-sec hover:text-text-prim'
+                }`}
               >
                 {link.name}
-              </Link>
+              </button>
             ))}
             <div className="h-px bg-black/5 my-2"></div>
-            <Link 
-              to="/launch"
-              onClick={() => setIsMobileMenuOpen(false)}
+            <button
+              type="button"
+              onClick={() => {
+                handleStartSession();
+                setIsMobileMenuOpen(false);
+              }}
               className="bg-phoenix text-center py-4 rounded-xl font-body font-bold tracking-wider uppercase text-sm text-white shadow-md"
             >
               Launch Interface
-            </Link>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (isAuthenticated) {
+                  handleLogout();
+                } else {
+                  handleLoginSignup();
+                }
+                setIsMobileMenuOpen(false);
+              }}
+              className="mt-2 flex items-center justify-center gap-2 py-3 rounded-xl bg-white/70 border border-black/10"
+              aria-label={isAuthenticated ? 'Logout' : 'Login'}
+              title={isAuthenticated ? 'Logout' : 'Login'}
+            >
+              <img
+                src={isAuthenticated ? '/logout.png' : '/login.png'}
+                alt={isAuthenticated ? 'Logout' : 'Login'}
+                className="h-8 w-auto object-contain"
+              />
+              <span className="font-body font-bold tracking-wider uppercase text-xs text-text-prim">
+                {isAuthenticated ? 'Logout' : 'Login / Sign Up'}
+              </span>
+            </button>
           </div>
         )}
       </div>

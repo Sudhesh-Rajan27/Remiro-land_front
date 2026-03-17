@@ -107,7 +107,14 @@ const LaunchSimpleCountdown: React.FC = () => {
           </p>
           <button
             type="button"
-            onClick={() => navigate('/launch')}
+            onClick={() => {
+              const token = localStorage.getItem('remiro_token');
+              if (!token) {
+                navigate('/register');
+              } else {
+                navigate('/launch');
+              }
+            }}
             className="bg-gradient-to-r from-dawn to-phoenix text-white px-8 py-4 rounded-full font-bold tracking-widest uppercase text-sm hover:shadow-[0_0_30px_rgba(214,90,90,0.3)] transition-all transform hover:-translate-y-1"
           >
             Join Early Access

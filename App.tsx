@@ -35,7 +35,7 @@ function RequireAuth({ children }: RequireAuthProps) {
   }, [token]);
 
   if (!token) {
-    return <Navigate to="/" replace state={{ from: location }} />;
+    return <Navigate to="/register" replace state={{ from: location }} />;
   }
 
   return children;
@@ -43,7 +43,10 @@ function RequireAuth({ children }: RequireAuthProps) {
 
 function App() {
   const location = useLocation();
-  const hideNavbar = location.pathname === '/' || location.pathname === '/login' || location.pathname === '/signup';
+  const hideNavbar =
+    location.pathname === '/register' ||
+    location.pathname === '/login' ||
+    location.pathname === '/signup';
 
   // Scroll to top on route change
   useEffect(() => {
@@ -54,10 +57,10 @@ function App() {
     <div className="relative min-h-screen text-text-sec selection:bg-dawn/30 selection:text-phoenix bg-base-bg font-body">
       <FluidBackground />
       {!hideNavbar && <Navbar />}
-      
+
       <Routes>
-        <Route path="/" element={<LoginSignup />} />
-        <Route path="/home" element={<Home />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Navigate to="/" replace />} />
         <Route path="/product" element={<Product />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/agents" element={<AIAgents />} />
@@ -74,8 +77,9 @@ function App() {
         <Route path="/stories" element={<Stories />} />
         <Route path="/launch" element={<Launch />} />
         <Route path="/about" element={<About />} />
-        <Route path="/login" element={<LoginSignup />} />
-        <Route path="/signup" element={<LoginSignup />} />
+        <Route path="/register" element={<LoginSignup />} />
+        <Route path="/login" element={<Navigate to="/register" replace />} />
+        <Route path="/signup" element={<Navigate to="/register" replace />} />
       </Routes>
 
       <Footer />

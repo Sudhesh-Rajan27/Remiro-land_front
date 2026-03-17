@@ -2,9 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Activity, BookOpen, Video, CheckSquare, FileText, Linkedin, GitBranch } from 'lucide-react';
+import { useAuthUser } from '../lib/auth';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { name } = useAuthUser();
   const dashboardItems = [
     { icon: <Activity className="w-5 h-5" />, title: "Career Readiness Score" },
     { icon: <BookOpen className="w-5 h-5" />, title: "Skills Bank" },
@@ -25,11 +27,11 @@ export default function Dashboard() {
         transition={{ duration: 0.8 }}
         className="text-center mb-20 relative z-10"
       >
-        <h1 className="text-5xl md:text-7xl font-heading font-bold mb-6 text-text-prim">
-          The Career <span className="text-transparent bg-clip-text bg-gradient-to-r from-dawn to-phoenix">Command Center</span>
+        <h1 className="text-5xl md:text-7xl font-heading font-bold mb-6 text-text-prim whitespace-pre-line">
+          {name ? `Hey ${name},\n` : ''}Welcome to your dashboard{'\n'}here&apos;s your career command center
         </h1>
         <p className="text-xl text-text-sec max-w-3xl mx-auto leading-relaxed font-body">
-          While the dashboard organizes information, the primary interaction remains Remiro Chat.
+          {/* intentionally removed as per requested copy */}
         </p>
       </motion.div>
 
@@ -42,7 +44,7 @@ export default function Dashboard() {
             viewport={{ once: true }}
             transition={{ delay: index * 0.05 }}
             className="glass-panel p-6 rounded-2xl flex flex-col items-center justify-center text-center hover:border-phoenix/50 transition-colors group cursor-pointer shadow-sm hover:shadow-md"
-            onClick={() => navigate('/home')}
+            onClick={() => navigate('/launch')}
           >
             <div className="w-12 h-12 rounded-full bg-white/60 flex items-center justify-center mb-4 border border-white/40 text-dawn group-hover:text-phoenix transition-colors shadow-sm">
               {item.icon}

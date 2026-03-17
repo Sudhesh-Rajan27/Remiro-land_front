@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, Rocket, Users, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { fetchWithAuth, getBackendUrl } from '../lib/api';
 
-const backendBaseUrl =
-  import.meta.env.VITE_BACKEND_URL || 'https://remiro-land-back.onrender.com';
+const backendBaseUrl = getBackendUrl();
 
 const LaunchTimer: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [seatsLeft, setSeatsLeft] = useState<number | null>(null);
@@ -36,28 +35,49 @@ const LaunchTimer: React.FC = () => {
     };
   }, []);
 
+  // On mount, check if the logged-in user is already enrolled
+  useEffect(() => {
+    const checkEnrollment = async () => {
+      try {
+        const res = await fetchWithAuth(`${backendBaseUrl}/api/register/status`);
+        const data = await res.json();
+        if (res.ok) {
+          if (typeof data.seatsLeft === 'number') {
+            setSeatsLeft(data.seatsLeft);
+          }
+          if (data.enrolled) {
+            setStatus('success');
+            setMessage("You're already enrolled for early access.");
+          }
+        }
+      } catch {
+        // Silently ignore; user might not be logged in
+      }
+    };
+    checkEnrollment();
+  }, []);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
     setStatus('loading');
+    setMessage('');
     try {
-      const res = await fetch(`${backendBaseUrl}/api/register`, {
+      const res = await fetchWithAuth(`${backendBaseUrl}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (res.ok) {
-        // If this email is already registered, show a friendly message
-        if (data.message && String(data.message).toLowerCase().includes('already')) {
-          setStatus('success');
-          setMessage("You're already in the list");
-        } else {
-          setStatus('success');
-          setMessage('Successfully registered for early access!');
+        setStatus('success');
+        setMessage(
+          data.message && String(data.message).toLowerCase().includes('already')
+            ? "You're already enrolled for early access."
+            : 'Successfully enrolled for early access!'
+        );
+        if (typeof data.seatsLeft === 'number') {
+          setSeatsLeft(data.seatsLeft);
         }
-        setSeatsLeft(data.seatsLeft);
-        setEmail('');
       } else {
         setStatus('error');
         setMessage(data.error || 'Registration failed');
@@ -136,37 +156,33 @@ const LaunchTimer: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex flex-col md:flex-row items-center justify-center gap-6 max-w-2xl mx-auto">
-              <div className="flex items-center gap-3 bg-black/5 border border-black/10 rounded-2xl px-6 py-4 w-full md:w-auto justify-center">
+            <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-6 max-w-2xl mx-auto">
+              <div className="flex items-center gap-3 bg-black/5 border border-black/10 rounded-2xl px-6 py-4 w-auto justify-center">
                 <Users className="w-6 h-6 text-phoenix" />
                 <div className="text-lg font-bold text-phoenix font-display">
                   {seatsLeft !== null ? seatsLeft : '---'} <span className="text-sm text-text-sec font-body font-normal">seats left</span>
                 </div>
               </div>
 
-              <form onSubmit={handleRegister} className="relative w-full md:flex-1">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address" 
-                    className="w-full bg-white/60 border border-black/10 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-phoenix/50 focus:border-phoenix font-body text-text-prim placeholder:text-text-sec/50 transition-all shadow-inner text-base"
-                    required
-                    disabled={status === 'loading' || status === 'success' || seatsLeft === 0}
-                  />
+              <form onSubmit={handleRegister} className="relative w-auto">
+                <div className="flex">
                   <button 
                     type="submit" 
                     disabled={status === 'loading' || status === 'success' || seatsLeft === 0}
                     className="bg-phoenix hover:bg-[#c24a4a] text-white px-8 py-4 rounded-2xl font-body font-bold text-base tracking-wide transition-all hover:shadow-xl disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 whitespace-nowrap"
                   >
-                    <span>{status === 'loading' ? 'Securing...' : status === 'success' ? 'Secured' : 'Get Early Access'}</span>
+                    <span>
+                      {status === 'loading'
+                        ? 'Securing...'
+                        : status === 'success'
+                        ? "You're Enrolled"
+                        : 'Get Early Access'}
+                    </span>
                     {status === 'success' ? <CheckCircle size={20} /> : <ArrowRight size={20} />}
                   </button>
                 </div>
                 {message && (
                   <p className={`absolute -bottom-8 left-0 w-full text-center text-sm font-medium ${status === 'success' ? 'text-dusty' : 'text-phoenix'}`}>
-                    {message}
                   </p>
                 )}
               </form>
